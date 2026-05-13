@@ -1,4 +1,4 @@
-import 'package:wiki_reader/data/services/random_article_service.dart';
+import 'package:wiki_reader/data/services/random_article.dart';
 import 'package:wiki_reader/summary.dart';
 
 class RandomArticleRepository {

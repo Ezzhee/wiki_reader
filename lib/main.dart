@@ -3,6 +3,8 @@ import 'summary.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart';
+import 'data/repositories/random_article_repository.dart';
+import 'data/services/random_article.dart';
 
 void main() {
   runApp(const MainApp());
@@ -13,16 +15,14 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(body: Center(child: ArticleView())),
-    );
+    return MaterialApp(home: ArticleView());
   }
 }
 
 class ArticleModel {
   Future<Summary> getRandomArticle() async {
     final uri = Uri.https(
-      'en.wikipedia.com',
+      'ru.wikipedia.org',
       'api/rest_v1/page/random/summary',
     );
     final response = await get(uri);
@@ -34,18 +34,18 @@ class ArticleModel {
 }
 
 class ArticleViewModel extends ChangeNotifier {
-  final ArticleModel model;
+  final ArticleModel repository;
   Summary? summary;
   Exception? error;
   bool isLoading = false;
-  ArticleViewModel(this.model) {
+  ArticleViewModel(this.repository) {
     fetchArticle();
   }
   void fetchArticle() async {
     isLoading = true;
     notifyListeners();
     try {
-      summary = await model.getRandomArticle();
+      summary = await repository.getRandomArticle();
       error = null;
     } on HttpException catch (e) {
       summary = null;
@@ -90,16 +90,16 @@ class ArticlePage extends StatelessWidget {
   final VoidCallback nextArticle;
   ArticlePage({super.key, required this.summary, required this.nextArticle});
   @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          ArticleWidget(summary: summary),
-          ElevatedButton(onPressed: nextArticle, child: Text("Next Article")),
-        ],
-      ),
-    );
-  }
+    Widget build(BuildContext context) {
+      return SingleChildScrollView(
+        child: Column(
+          children: [
+            ArticleWidget(summary: summary),
+            //ElevatedButton(onPressed: nextArticle, child: Text("Next Article")),
+          ],
+        ),
+      );
+    }
 }
 
 class ArticleView extends StatefulWidget {
@@ -108,7 +108,7 @@ class ArticleView extends StatefulWidget {
 }
 
 class _ArticleViewState extends State<ArticleView> {
-  final viewModel = ArticleViewModel (ArticleModel());
+  final viewModel = ArticleViewModel(ArticleModel());
   @override
   void initState() {
     super.initState();
@@ -117,6 +117,17 @@ class _ArticleViewState extends State<ArticleView> {
 
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: SizedBox(
+        height: 40,
+        width: 100,
+        child: FloatingActionButton(
+          child: Text("Next Article"),
+          onPressed: () => setState(() {
+            viewModel.fetchArticle();
+          })
+        ),
+      ),
       // appBar: AppBar(
       //   title: ,
       // ),
