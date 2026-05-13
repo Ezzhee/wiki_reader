@@ -14,7 +14,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: Scaffold(body: Center(child: Text('banan loh'))),
+      home: Scaffold(body: Center(child: ArticleView())),
     );
   }
 }
@@ -22,7 +22,7 @@ class MainApp extends StatelessWidget {
 class ArticleModel {
   Future<Summary> getRandomArticle() async {
     final uri = Uri.https(
-      'en.wikipedia.com'
+      'en.wikipedia.com',
       'api/rest_v1/page/random/summary',
     );
     final response = await get(uri);
@@ -58,14 +58,13 @@ class ArticleViewModel extends ChangeNotifier {
 
 class ArticleWidget extends StatelessWidget {
   final Summary summary;
-  ArticleWidget({super.key, required this.summary});
-
+  const ArticleWidget({super.key, required this.summary});
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(8.0),
       child: Column(
-        spacing: 5.0,
+        spacing: 10,
         children: [
           if (summary.hasImage) Image.network(summary.originalImage!.source),
           Text(
@@ -74,14 +73,72 @@ class ArticleWidget extends StatelessWidget {
             style: Theme.of(context).textTheme.displaySmall,
           ),
           if (summary.description != null)
-          Text(
+            Text(
               summary.description!,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.displaySmall,
             ),
-
           Text(summary.extract),
         ],
+      ),
+    );
+  }
+}
+
+class ArticlePage extends StatelessWidget {
+  final Summary summary;
+  final VoidCallback nextArticle;
+  ArticlePage({super.key, required this.summary, required this.nextArticle});
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          ArticleWidget(summary: summary),
+          ElevatedButton(onPressed: nextArticle, child: Text("Next Article")),
+        ],
+      ),
+    );
+  }
+}
+
+class ArticleView extends StatefulWidget {
+  const ArticleView({super.key});
+  State<ArticleView> createState() => _ArticleViewState();
+}
+
+class _ArticleViewState extends State<ArticleView> {
+  final viewModel = ArticleViewModel (ArticleModel());
+  @override
+  void initState() {
+    super.initState();
+    viewModel.fetchArticle();
+  }
+
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // appBar: AppBar(
+      //   title: ,
+      // ),
+      body: Center(
+        child: ListenableBuilder(
+          listenable: viewModel,
+          builder: (_, context) {
+            return switch ((
+              viewModel.isLoading,
+              viewModel.summary,
+              viewModel.error,
+            )) {
+              (true, _, _) => CircularProgressIndicator(),
+              (_, _, Exception e) => Text('error $e'),
+              (_, Summary summary, _) => ArticlePage(
+                summary: viewModel.summary!,
+                nextArticle: viewModel.fetchArticle,
+              ),
+              _ => Text("Something went wrong"),
+            };
+          },
+        ),
       ),
     );
   }
